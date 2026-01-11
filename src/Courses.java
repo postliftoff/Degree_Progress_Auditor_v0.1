@@ -1,9 +1,27 @@
 import java.util.ArrayList;
 
+class Semester{
+    ArrayList<Courses> semester = new ArrayList<>();
+    int semesterNumber;
+    double GPA;
+
+    void addCoursesToSemester(ArrayList<TheoryCourse> theoryCourses, ArrayList<LabCourse> labCourses){
+        semester.addAll(theoryCourses);
+        semester.addAll(labCourses);
+    }
+
+    void printSemester(){
+        addCoursesToSemester(Courses.theoryCourses,Courses.labCourses);
+        for(Courses course: semester){
+            System.out.println(course.courseName);
+        }
+    }
+}
+
 // This class is for whenever I want to add a new course for my auditor.
-public abstract class Courses {
-    ArrayList<TheoryCourse> theoryCourses = new ArrayList<>();
-    ArrayList<LabCourse> labCourses = new ArrayList<>();
+public abstract class Courses extends Semester {
+    static ArrayList<TheoryCourse> theoryCourses = new ArrayList<>();
+    static ArrayList<LabCourse> labCourses = new ArrayList<>();
     String courseName;
     String courseType;
     int creditHours;

@@ -1,48 +1,47 @@
 import java.awt.*;
+import java.awt.event.*;
 import javax.swing.*;
+import javax.swing.event.*;
 
 public class GUI {
     JFrame frame;
     JColorChooser colorChooser;
     JSplitPane splitPane;
-    JPanel sidePanel;
-    JPanel contentPanel;
-    JLabel welcomeLabel;
-    JLabel theoryCoursePrompt;
-    JLabel labCoursePrompt;
-    JLabel courseContainer;
+    JPanel sidePanel, contentPanel;
+    JLabel welcomeLabel, theoryCoursePrompt ,labCoursePrompt, courseContainer;
     JTextField textField;
-    JButton labCourseButton;
-    JButton labBackButton;
-    JButton theoryCourseButton;
-    JButton theoryBackButton;
-    JButton showCoursesButton;
-    JButton showCoursesBackButton;
-    JButton nextButton;
+    JButton labCourseButton, labBackButton, theoryCourseButton, theoryBackButton, showCoursesButton, showCoursesBackButton, nextButton, zafarButton;
 
     void guiStart() {
 //        colorChooser = new JColorChooser(); Could be addded to a settings tab.
         frame = new JFrame("Degree Progress Auditor");
-        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidePanel = new JPanel();
         contentPanel = new JPanel();
         welcomeLabel = new JLabel("Welcome to the Degree Progress Auditor!");
         theoryCourseButton = new JButton("Add New Theory Course");
         labCourseButton = new JButton("Add New Lab Course");
         showCoursesButton = new JButton("Show Courses");
+        zafarButton = new JButton("Zafar");
 
         frame.setLayout(new BorderLayout());
         frame.setSize(1000, 700);
 
-        splitPane.setDividerLocation(0.5);
-        splitPane.setResizeWeight(0.5);
+//        splitPane.setDividerLocation(0.2);
+//        splitPane.setResizeWeight(0.05);
         splitPane.setOneTouchExpandable(true);
 
-        sidePanel.setLayout(new GridLayout(4,1));
+        sidePanel.setLayout(new GridLayout(1,4));
         sidePanel.setSize(100, 600);
+
+        theoryCourseButton.setSize(30, 40);
+        labCourseButton.setSize(30, 40);
+        showCoursesButton.setSize(30, 40);
+
         sidePanel.add(BorderLayout.WEST,theoryCourseButton);
-        sidePanel.add(BorderLayout.WEST,showCoursesButton);
         sidePanel.add(BorderLayout.WEST,labCourseButton);
+        sidePanel.add(BorderLayout.WEST,showCoursesButton);
+        sidePanel.add(BorderLayout.WEST,zafarButton);
 //        sidePanel.add(BorderLayout.EAST,colorChooser);
 
         contentPanel.setSize(1000,600);
@@ -55,6 +54,8 @@ public class GUI {
 
         // The theory course button calls the method to add a new theory course.
         theoryCourseButton.addActionListener(e -> addTheoryCourse());
+        Semester sem = new Semester();
+        zafarButton.addActionListener(e -> sem.printSemester());
 
         // The lab course button calls the method to add a new lab course.
         labCourseButton.addActionListener(e -> addLabCourse());
@@ -71,7 +72,7 @@ public class GUI {
 
     void addTheoryCourse() {
         contentPanel.removeAll();
-        theoryCoursePrompt = new JLabel("Enter the course name");
+        theoryCoursePrompt = new JLabel("Enter the theory course's name");
         textField = new JTextField(20);
         nextButton = new JButton("Next");
         theoryBackButton = new JButton("Back");
@@ -118,7 +119,7 @@ public class GUI {
 
     void addLabCourse() {
         contentPanel.removeAll();
-        labCoursePrompt = new JLabel("Enter the course name");
+        labCoursePrompt = new JLabel("Enter the lab course's name");
         textField = new JTextField(20);
         nextButton = new JButton("Next");
         labBackButton = new JButton("Back");
