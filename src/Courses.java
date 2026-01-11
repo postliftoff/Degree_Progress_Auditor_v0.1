@@ -3,6 +3,7 @@ import java.util.ArrayList;
 // This class is for whenever I want to add a new course for my auditor.
 public abstract class Courses {
     ArrayList<TheoryCourse> theoryCourses = new ArrayList<>();
+    ArrayList<LabCourse> labCourses = new ArrayList<>();
     String courseName;
     String courseType;
     int creditHours;
@@ -61,7 +62,7 @@ class TheoryCourse extends Courses {
                 this.courseType = "Theory";
                 this.totalTheoryScore = sessionalsScore + midtermExamScore + finalExamScore;
                 this.gradePoints = (double) this.totalTheoryScore / this.creditHours;
-                gui.theoryCoursePrompt.setText("Course has been saved!");
+                gui.theoryCoursePrompt.setText("Theory course has been saved!");
                 gui.nextButton.setEnabled(false);
                 gui.textField.setEnabled(false);
                 theoryCourses.add(this);
@@ -71,26 +72,55 @@ class TheoryCourse extends Courses {
     }
 }
 
-//class LabCourse extends Courses {
-//    int labManualScore;
-//    int projectScore;
-//    int labExamScore;
-//    int totalLabScore;
-//
-//    // The same method with the implementation for a lab course.
-//    @Override
-//    void initialiseCourse(){
-//        System.out.println("Enter the course name:");
-//        courseName = input.nextLine();
-//        System.out.println("Enter the credit hours:");
-//        creditHours = input.nextInt();
-//        System.out.println("Enter the attendance in percentage (without the % sign):");
-//        attendanceInPercentage = input.nextInt();
-//        System.out.println("Enter the lab manual score:");
-//        labManualScore = input.nextInt();
-//        System.out.println("Enter the project score:");
-//        projectScore = input.nextInt();
-//        System.out.println("Enter the lab exam score:");
-//        labExamScore = input.nextInt();
-//    }
-//}
+class LabCourse extends Courses {
+    int labManualScore;
+    int projectScore;
+    int labExamScore;
+    int totalLabScore;
+
+    // The same method with the implementation for a lab course.
+    @Override
+    void processNextInput(String input, GUI gui) {
+        switch (state) {
+            case 0:
+                this.courseName = input;
+                gui.labCoursePrompt.setText("Enter the credit hours");
+                state++;
+                break;
+            case 1:
+                this.creditHours = Integer.parseInt(input);
+                /* The input we get here is fully in String form,
+                We must parse our input to int form using wrapper classes.
+                */
+                gui.labCoursePrompt.setText("Enter the attendance in percentage (without % sign)");
+                state++;
+                break;
+            case 2:
+                this.attendanceInPercentage = Integer.parseInt(input);
+                gui.labCoursePrompt.setText("Enter the lab manual score");
+                state++;
+                break;
+            case 3:
+                this.labManualScore = Integer.parseInt(input);
+                gui.labCoursePrompt.setText("Enter the project score");
+                state++;
+                break;
+            case 4:
+                this.projectScore = Integer.parseInt(input);
+                gui.labCoursePrompt.setText("Enter the lab exam score");
+                state++;
+                break;
+            case 5:
+                this.labExamScore = Integer.parseInt(input);
+                this.courseType = "Lab";
+                this.totalLabScore = labManualScore + projectScore + labExamScore;
+                this.gradePoints = (double) this.totalLabScore / this.creditHours;
+                gui.labCoursePrompt.setText("Lab course has been saved!");
+                gui.nextButton.setEnabled(false);
+                gui.textField.setEnabled(false);
+                labCourses.add(this);
+                state = 0;
+                break;
+        }
+    }
+}

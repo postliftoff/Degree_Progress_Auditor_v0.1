@@ -3,38 +3,61 @@ import javax.swing.*;
 
 public class GUI {
     JFrame frame;
+    JColorChooser colorChooser;
+    JSplitPane splitPane;
     JPanel sidePanel;
     JPanel contentPanel;
+    JLabel welcomeLabel;
     JLabel theoryCoursePrompt;
+    JLabel labCoursePrompt;
     JLabel courseContainer;
     JTextField textField;
+    JButton labCourseButton;
+    JButton labBackButton;
     JButton theoryCourseButton;
+    JButton theoryBackButton;
     JButton showCoursesButton;
     JButton showCoursesBackButton;
     JButton nextButton;
-    JButton addTheoryBackButton;
 
     void guiStart() {
+//        colorChooser = new JColorChooser(); Could be addded to a settings tab.
         frame = new JFrame("Degree Progress Auditor");
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         sidePanel = new JPanel();
         contentPanel = new JPanel();
+        welcomeLabel = new JLabel("Welcome to the Degree Progress Auditor!");
         theoryCourseButton = new JButton("Add New Theory Course");
+        labCourseButton = new JButton("Add New Lab Course");
         showCoursesButton = new JButton("Show Courses");
 
         frame.setLayout(new BorderLayout());
-        frame.setSize(1200, 600);
+        frame.setSize(1000, 700);
+
+        splitPane.setDividerLocation(0.5);
+        splitPane.setResizeWeight(0.5);
+        splitPane.setOneTouchExpandable(true);
 
         sidePanel.setLayout(new GridLayout(4,1));
-        sidePanel.setSize(200, 500);
+        sidePanel.setSize(100, 600);
         sidePanel.add(BorderLayout.WEST,theoryCourseButton);
         sidePanel.add(BorderLayout.WEST,showCoursesButton);
-        frame.add(BorderLayout.WEST,sidePanel);
+        sidePanel.add(BorderLayout.WEST,labCourseButton);
+//        sidePanel.add(BorderLayout.EAST,colorChooser);
 
-        contentPanel.setSize(800,500);
+        contentPanel.setSize(1000,600);
         contentPanel.setLayout(new FlowLayout());
+        contentPanel.add(welcomeLabel);
+
+        splitPane.setLeftComponent(sidePanel);
+        splitPane.setRightComponent(contentPanel);
+        frame.add(BorderLayout.CENTER,splitPane);
 
         // The theory course button calls the method to add a new theory course.
         theoryCourseButton.addActionListener(e -> addTheoryCourse());
+
+        // The lab course button calls the method to add a new lab course.
+        labCourseButton.addActionListener(e -> addLabCourse());
 
         // The show course button shows you added courses.
         showCoursesButton.addActionListener(e -> displayCourses());
@@ -51,9 +74,10 @@ public class GUI {
         theoryCoursePrompt = new JLabel("Enter the course name");
         textField = new JTextField(20);
         nextButton = new JButton("Next");
-        addTheoryBackButton = new JButton("Back");
+        theoryBackButton = new JButton("Back");
 
         theoryCourseButton.setEnabled(false);
+        labCourseButton.setEnabled(true);
         showCoursesButton.setEnabled(true);
 
         theoryCoursePrompt.setSize(200, 50);
@@ -61,27 +85,28 @@ public class GUI {
         contentPanel.add(theoryCoursePrompt);
         contentPanel.add(textField);
         contentPanel.add(nextButton);
-        contentPanel.add(addTheoryBackButton);
+        contentPanel.add(theoryBackButton);
 
         contentPanel.setVisible(true);
-        frame.add(BorderLayout.CENTER,contentPanel);
+        splitPane.setRightComponent(contentPanel);
         frame.revalidate();
         frame.repaint();
 
-        nextButton.addActionListener(e -> processInput());
+        nextButton.addActionListener(e -> processTheoryInput());
 
-        textField.addActionListener( e -> processInput());
+        textField.addActionListener( e -> processTheoryInput());
 
-        addTheoryBackButton.addActionListener(e -> {
+        theoryBackButton.addActionListener(e -> {
             contentPanel.removeAll();
-            contentPanel.setVisible(false);
+            contentPanel.add(welcomeLabel);
+//            contentPanel.setVisible(false);
             theoryCourseButton.setEnabled(true);
             frame.revalidate();
             frame.repaint();
         });
     }
 
-    private void processInput(){ // A listener for button to add a theory course.
+    private void processTheoryInput(){ // A listener for button to add a theory course.
         String userInput = textField.getText();
         if(!userInput.isEmpty()) {
             theoryCourse.processNextInput(userInput, this); // "this" refers to the current GUI.
@@ -89,31 +114,88 @@ public class GUI {
         }
     }
 
+    LabCourse labCourse = new LabCourse();
+
+    void addLabCourse() {
+        contentPanel.removeAll();
+        labCoursePrompt = new JLabel("Enter the course name");
+        textField = new JTextField(20);
+        nextButton = new JButton("Next");
+        labBackButton = new JButton("Back");
+
+        labCourseButton.setEnabled(false);
+        theoryCourseButton.setEnabled(true);
+        showCoursesButton.setEnabled(true);
+
+        labCoursePrompt.setSize(200, 50);
+
+        contentPanel.add(labCoursePrompt);
+        contentPanel.add(textField);
+        contentPanel.add(nextButton);
+        contentPanel.add(labBackButton);
+
+        contentPanel.setVisible(true);
+        splitPane.setRightComponent(contentPanel);
+        frame.revalidate();
+        frame.repaint();
+
+        nextButton.addActionListener(e -> processLabInput());
+
+        textField.addActionListener( e -> processLabInput());
+
+        labBackButton.addActionListener(e -> {
+            contentPanel.removeAll();
+            contentPanel.add(welcomeLabel);
+//            contentPanel.setVisible(false);
+            labCourseButton.setEnabled(true);
+            frame.revalidate();
+            frame.repaint();
+        });
+    }
+
+    private void processLabInput(){ // A listener for button to add a lab course.
+        String userInput = textField.getText();
+        if(!userInput.isEmpty()) {
+            labCourse.processNextInput(userInput, this); // "this" refers to the current GUI.
+            textField.setText("");
+        }
+    }
+
     void displayCourses(){
-        courseContainer = new JLabel();
         showCoursesBackButton = new JButton("Back");
 
         contentPanel.removeAll();
         theoryCourseButton.setEnabled(true);
+        labCourseButton.setEnabled(true);
         showCoursesButton.setEnabled(false);
 
         for(TheoryCourse course : theoryCourse.theoryCourses) {
+            courseContainer = new JLabel();
             courseContainer.setText("Course name: " + course.courseName + "\nCredit Hours: " + course.creditHours +
                     "Course Type: " + course.courseType + "\nYour Attendance: " + course.attendanceInPercentage +
                     "%\nYour Total Theory Score: " + course.totalTheoryScore + "Grade Points: " + course.gradePoints);
+            contentPanel.add(courseContainer);
         }
 
-        contentPanel.add(courseContainer);
+        for(LabCourse course : labCourse.labCourses) {
+            courseContainer = new JLabel();
+            courseContainer.setText("Course name: " + course.courseName + " Credit Hours: " + course.creditHours +
+                    " Course Type: " + course.courseType + " Your Attendance: " + course.attendanceInPercentage +
+                    "% Your Total Theory Score: " + course.totalLabScore + " Grade Points: " + course.gradePoints);
+            contentPanel.add(courseContainer);
+        }
+
         contentPanel.add(showCoursesBackButton);
         contentPanel.setVisible(true);
 
-        frame.add(BorderLayout.CENTER,contentPanel);
+        splitPane.setRightComponent(contentPanel);
         frame.revalidate();
         frame.repaint();
 
         showCoursesBackButton.addActionListener(e -> {
             contentPanel.removeAll();
-            contentPanel.setVisible(false);
+            contentPanel.add(welcomeLabel);
+//            contentPanel.setVisible(false);
             showCoursesButton.setEnabled(true);
             frame.revalidate();
             frame.repaint();
