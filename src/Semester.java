@@ -1,27 +1,23 @@
 import java.util.ArrayList;
 
-class Semester{
+public class Semester{
     ArrayList<Courses> semester = new ArrayList<>();
     int semesterNumber;
     double GPA;
 
-    void addCoursesToSemester(ArrayList<TheoryCourse> theoryCourses, ArrayList<LabCourse> labCourses){
+    void addTheoryCoursesToSemester(ArrayList<TheoryCourse> theoryCourses){
         semester.addAll(theoryCourses);
-        semester.addAll(labCourses);
     }
 
-    void printSemester(){
-        addCoursesToSemester(Courses.theoryCourses,Courses.labCourses);
-        for(Courses course: semester){
-            System.out.println(course.courseName);
-        }
+    void addLabCoursesToSemester(ArrayList<LabCourse> labCourses){
+        semester.addAll(labCourses);
     }
 }
 
 // This class is for whenever I want to add a new course for my auditor.
-public abstract class Courses extends Semester {
-    static ArrayList<TheoryCourse> theoryCourses = new ArrayList<>();
-    static ArrayList<LabCourse> labCourses = new ArrayList<>();
+abstract class Courses extends Semester {
+    ArrayList<TheoryCourse> theoryCourses = new ArrayList<>();
+    ArrayList<LabCourse> labCourses = new ArrayList<>();
     String courseName;
     String courseType;
     int creditHours;
@@ -38,6 +34,7 @@ class TheoryCourse extends Courses {
     int midtermExamScore;
     int finalExamScore;
     int totalTheoryScore;
+    CGPA cgpa;
 
     /* Below is the implementation of the method used when creating a new theory course:
      We pass the input from the GUI and the GUI itself into the method (The current active GUI).
@@ -79,11 +76,18 @@ class TheoryCourse extends Courses {
                 this.finalExamScore = Integer.parseInt(input);
                 this.courseType = "Theory";
                 this.totalTheoryScore = sessionalsScore + midtermExamScore + finalExamScore;
-                this.gradePoints = (double) this.totalTheoryScore / this.creditHours;
+                this.gradePoints = gpCalculator.calculatorForGP(this.totalTheoryScore,this.creditHours);
+
                 gui.theoryCoursePrompt.setText("Theory course has been saved!");
                 gui.nextButton.setEnabled(false);
                 gui.textField.setEnabled(false);
+
                 theoryCourses.add(this);
+                addTheoryCoursesToSemester(theoryCourses);
+
+                cgpa.addToCGPA(gradePoints, creditHours);
+                cgpa.calculateCGPA();
+
                 state = 0;
                 break;
         }
@@ -95,6 +99,7 @@ class LabCourse extends Courses {
     int projectScore;
     int labExamScore;
     int totalLabScore;
+    CGPA cgpa;
 
     // The same method with the implementation for a lab course.
     @Override
@@ -107,9 +112,6 @@ class LabCourse extends Courses {
                 break;
             case 1:
                 this.creditHours = Integer.parseInt(input);
-                /* The input we get here is fully in String form,
-                We must parse our input to int form using wrapper classes.
-                */
                 gui.labCoursePrompt.setText("Enter the attendance in percentage (without % sign)");
                 state++;
                 break;
@@ -132,11 +134,18 @@ class LabCourse extends Courses {
                 this.labExamScore = Integer.parseInt(input);
                 this.courseType = "Lab";
                 this.totalLabScore = labManualScore + projectScore + labExamScore;
-                this.gradePoints = (double) this.totalLabScore / this.creditHours;
+                this.gradePoints = gpCalculator.calculatorForGP(this.totalLabScore,this.creditHours);
+
                 gui.labCoursePrompt.setText("Lab course has been saved!");
                 gui.nextButton.setEnabled(false);
                 gui.textField.setEnabled(false);
+
                 labCourses.add(this);
+                addLabCoursesToSemester(labCourses);
+
+                cgpa.addToCGPA(gradePoints,creditHours);
+                cgpa.calculateCGPA();
+
                 state = 0;
                 break;
         }

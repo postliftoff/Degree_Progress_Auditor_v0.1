@@ -4,3 +4,5 @@ public class Main {
         gui.guiStart();
     }
 }
+
+// Validity checks pending for all the attributes the uer has to enter at runtime.

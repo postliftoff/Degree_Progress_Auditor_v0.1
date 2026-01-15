@@ -55,7 +55,7 @@ public class GUI {
         // The theory course button calls the method to add a new theory course.
         theoryCourseButton.addActionListener(e -> addTheoryCourse());
         Semester sem = new Semester();
-        zafarButton.addActionListener(e -> sem.printSemester());
+//        zafarButton.addActionListener(e -> sem.printSemester());
 
         // The lab course button calls the method to add a new lab course.
         labCourseButton.addActionListener(e -> addLabCourse());
