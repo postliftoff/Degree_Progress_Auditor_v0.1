@@ -1,19 +1,25 @@
 import java.awt.*;
-import java.awt.event.*;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import javax.swing.*;
-import javax.swing.event.*;
+import javax.swing.table.DefaultTableModel;
 
 public class GUI {
     JFrame frame;
-    JColorChooser colorChooser;
     JSplitPane splitPane;
-    JPanel sidePanel, contentPanel;
-    JLabel welcomeLabel, theoryCoursePrompt ,labCoursePrompt, courseContainer;
+    JTable theoryTable, labTable;
+    DefaultTableModel theoryModel, labModel;
+    JScrollPane scrollPaneForTheoryCourses, scrollPaneForLabCourses;
+    JTabbedPane tabbedPaneForSemesters;
+    JPanel sidePanel, contentPanel, buttonPanel;
+    JLabel welcomeLabel, theoryCoursePrompt ,labCoursePrompt;
     JTextField textField;
-    JButton labCourseButton, labBackButton, theoryCourseButton, theoryBackButton, showCoursesButton, showCoursesBackButton, nextButton, zafarButton;
+//    JOptionPane deletePrompt;
+    JButton labCourseButton, labBackButton, theoryCourseButton, theoryBackButton, showCoursesButton, showCoursesBackButton, nextButton, deleteCourseButton;
 
     void guiStart() {
-//        colorChooser = new JColorChooser(); Could be addded to a settings tab.
         frame = new JFrame("Degree Progress Auditor");
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
         sidePanel = new JPanel();
@@ -22,7 +28,17 @@ public class GUI {
         theoryCourseButton = new JButton("Add New Theory Course");
         labCourseButton = new JButton("Add New Lab Course");
         showCoursesButton = new JButton("Show Courses");
-        zafarButton = new JButton("Zafar");
+
+        theoryCourse.cgpa = commonGPA;
+        labCourse.cgpa = commonGPA;
+
+        String[] theoryColumns = {"ID","Course Name","Credit Hours","Attendance","Sessionals Score",
+                "Midterm Exam Score","Final Exam Score","Total Theory Score","Grade Points"};
+        theoryModel = new DefaultTableModel(theoryColumns, 0);
+
+        String[] labColumns = {"ID","Course Name","Credit Hours","Attendance","Lab Manual Score",
+                "Project Score","Lab Exam Score","Total Lab Score","Grade Points"};
+        labModel = new DefaultTableModel(labColumns, 0);
 
         frame.setLayout(new BorderLayout());
         frame.setSize(1000, 700);
@@ -41,8 +57,6 @@ public class GUI {
         sidePanel.add(BorderLayout.WEST,theoryCourseButton);
         sidePanel.add(BorderLayout.WEST,labCourseButton);
         sidePanel.add(BorderLayout.WEST,showCoursesButton);
-        sidePanel.add(BorderLayout.WEST,zafarButton);
-//        sidePanel.add(BorderLayout.EAST,colorChooser);
 
         contentPanel.setSize(1000,600);
         contentPanel.setLayout(new FlowLayout());
@@ -55,7 +69,6 @@ public class GUI {
         // The theory course button calls the method to add a new theory course.
         theoryCourseButton.addActionListener(e -> addTheoryCourse());
         Semester sem = new Semester();
-//        zafarButton.addActionListener(e -> sem.printSemester());
 
         // The lab course button calls the method to add a new lab course.
         labCourseButton.addActionListener(e -> addLabCourse());
@@ -67,12 +80,14 @@ public class GUI {
         frame.setVisible(true);
     }
 
+    // An instance of CGPA is required to prevent crashes
+    CGPA commonGPA  = new CGPA();
     // An instance of a theory course is needed here, to provide the logic from the class.
     TheoryCourse theoryCourse = new TheoryCourse();
 
     void addTheoryCourse() {
         contentPanel.removeAll();
-        theoryCoursePrompt = new JLabel("Enter the theory course's name");
+        theoryCoursePrompt = new JLabel("Enter the semester number:");
         textField = new JTextField(20);
         nextButton = new JButton("Next");
         theoryBackButton = new JButton("Back");
@@ -115,11 +130,12 @@ public class GUI {
         }
     }
 
+    // An instance of a lab course is needed here, to provide the logic from the class.
     LabCourse labCourse = new LabCourse();
 
     void addLabCourse() {
         contentPanel.removeAll();
-        labCoursePrompt = new JLabel("Enter the lab course's name");
+        labCoursePrompt = new JLabel("Enter the semester number:");
         textField = new JTextField(20);
         nextButton = new JButton("Next");
         labBackButton = new JButton("Back");
@@ -162,6 +178,63 @@ public class GUI {
         }
     }
 
+    void updateTheoryTable(){
+        /* A method to update the theory course table, fetching data from SQLite
+        We start by resetting the pre-existing rows: */
+        theoryModel.setRowCount(0);
+
+        // Here, a prompt that selects fields from a table.
+        String selectionPromptSQL = "SELECT id, course_name, credit_hours, attendance, sessionals_score," +
+                " midterm_exam_score, final_exam_score, total_theory_score, grade_points FROM theory_courses";
+
+        try (Connection conn = SQLDatabase.connectToDatabase(); // Establishing a connection
+             Statement stmt = conn.createStatement(); // Creating the statement
+             ResultSet rs = stmt.executeQuery(selectionPromptSQL)){ // Executing our query in SQL
+
+            while (rs.next()){ // Iterating through the table
+                int id = rs.getInt("id");
+                String cn = rs.getString("course_name");
+                int crhrs = rs.getInt("credit_hours");
+                int att = rs.getInt("attendance");
+                int ss = rs.getInt("sessionals_score");
+                int mes = rs.getInt("midterm_exam_score");
+                int fes = rs.getInt("final_exam_score");
+                int tts = rs.getInt("total_theory_score");
+                int gps = rs.getInt("grade_points");
+
+                theoryModel.addRow(new Object[]{id,cn,crhrs,att,ss,mes,fes,tts,gps}); // Adding all the data in a row.
+            }
+        } catch (SQLException e){
+            System.out.println("Couldn't load table: " + e.getMessage());
+        }
+    }
+
+    void updateLabTable() {
+        labModel.setRowCount(0);
+
+        String selectionPromptSQL = "SELECT id, course_name, credit_hours, attendance, lab_manual_score, project_score," +
+                " lab_exam_score, total_lab_score, grade_points FROM lab_courses";
+
+        try (Connection conn = SQLDatabase.connectToDatabase();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(selectionPromptSQL)) {
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String cn = rs.getString("course_name");
+                int crhrs = rs.getInt("credit_hours");
+                int attendance = rs.getInt("attendance");
+                int lms = rs.getInt("lab_manual_score");
+                int ps = rs.getInt("project_score");
+                int les = rs.getInt("lab_exam_score");
+                int tls = rs.getInt("total_lab_score");
+                int gps = rs.getInt("grade_points");
+
+                labModel.addRow(new Object[]{id,cn,crhrs,attendance,lms,ps,les,tls,gps});
+            }
+        } catch (SQLException e) { System.out.println(e.getMessage()); }
+    }
+
     void displayCourses(){
         showCoursesBackButton = new JButton("Back");
 
@@ -170,28 +243,53 @@ public class GUI {
         labCourseButton.setEnabled(true);
         showCoursesButton.setEnabled(false);
 
-        for(TheoryCourse course : theoryCourse.theoryCourses) {
-            courseContainer = new JLabel();
-            courseContainer.setText("Course name: " + course.courseName + "\nCredit Hours: " + course.creditHours +
-                    "Course Type: " + course.courseType + "\nYour Attendance: " + course.attendanceInPercentage +
-                    "%\nYour Total Theory Score: " + course.totalTheoryScore + "Grade Points: " + course.gradePoints);
-            contentPanel.add(courseContainer);
-        }
 
-        for(LabCourse course : labCourse.labCourses) {
-            courseContainer = new JLabel();
-            courseContainer.setText("Course name: " + course.courseName + " Credit Hours: " + course.creditHours +
-                    " Course Type: " + course.courseType + " Your Attendance: " + course.attendanceInPercentage +
-                    "% Your Total Theory Score: " + course.totalLabScore + " Grade Points: " + course.gradePoints);
-            contentPanel.add(courseContainer);
-        }
+        buttonPanel = new JPanel();
+        tabbedPaneForSemesters = new JTabbedPane();
+        theoryTable = new JTable(theoryModel);
+        labTable = new JTable(labModel);
+        scrollPaneForTheoryCourses = new JScrollPane(theoryTable);
+        scrollPaneForLabCourses = new JScrollPane(labTable);
+        deleteCourseButton = new JButton("Delete Course");
 
-        contentPanel.add(showCoursesBackButton);
+//        scrollPaneForTheoryCourses.setLayout(new FlowLayout());
+//        scrollPaneForLabCourses.setLayout(new FlowLayout());
+//        scrollPaneForTheoryCourses.add(theoryTable);
+//        scrollPaneForLabCourses.add(labTable);
+
+//        tabbedPaneForSemesters.setLayout(new FlowLayout());
+        tabbedPaneForSemesters.add(scrollPaneForTheoryCourses);
+        tabbedPaneForSemesters.add(scrollPaneForLabCourses);
+
+        buttonPanel.add(deleteCourseButton);
+        buttonPanel.add(showCoursesBackButton);
+
+        contentPanel.add(tabbedPaneForSemesters);
+        contentPanel.add(buttonPanel);
         contentPanel.setVisible(true);
 
         splitPane.setRightComponent(contentPanel);
         frame.revalidate();
         frame.repaint();
+
+        deleteCourseButton.addActionListener(e -> {
+            int theoryRow = theoryTable.getSelectedRow();
+            int labRow = labTable.getSelectedRow();
+
+            if (theoryRow != -1){
+                int id = (int) theoryModel.getValueAt(theoryRow, 0);
+                SQLDatabase.deleteCourse(id,"theory_courses");
+                updateTheoryTable();
+                JOptionPane.showMessageDialog(frame, "Deleted theory table");
+            } else if (labRow != -1){
+                int id = (int) labModel.getValueAt(labRow, 0);
+                SQLDatabase.deleteCourse(id,"lab_courses");
+                updateLabTable();
+                JOptionPane.showMessageDialog(frame, "Deleted lab table");
+            } else {
+                JOptionPane.showMessageDialog(frame, "Please select a course to delete");
+            }
+        });
 
         showCoursesBackButton.addActionListener(e -> {
             contentPanel.removeAll();
@@ -201,5 +299,8 @@ public class GUI {
             frame.revalidate();
             frame.repaint();
         });
+
+        updateTheoryTable();
+        updateLabTable();
     }
 }

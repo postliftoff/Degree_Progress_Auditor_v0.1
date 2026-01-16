@@ -7,4 +7,5 @@ public class Main {
     }
 }
 
-// Validity checks pending for all the attributes the uer has to enter at runtime.
+// Needs validity checks pending for all the attributes the user has to enter at runtime.
+// Make changes to LabCourse, same as theoryCourse

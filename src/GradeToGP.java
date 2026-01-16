@@ -7,7 +7,7 @@ public enum GradeToGP {
 
     private final double gradePointsPerGrade;
 
-    private GradeToGP(double gradePointsPerGrade) {
+    GradeToGP(double gradePointsPerGrade) {
         this.gradePointsPerGrade = gradePointsPerGrade;
     }
 
