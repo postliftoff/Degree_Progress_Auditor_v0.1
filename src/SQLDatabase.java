@@ -10,7 +10,7 @@ public class SQLDatabase {
         return DriverManager.getConnection(URL);
     }
 
-    public static void initializeDatabase(){
+    public static void initializeTheoryTable(){
         // The SQL statement that initializes the entire database and creates a table.
         String sqlTableCreationPrompt = "CREATE TABLE IF NOT EXISTS theory_courses (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -23,8 +23,22 @@ public class SQLDatabase {
                 "final_exam_score INTEGER," +
                 "total_theory_score INTEGER," +
                 "grade_points REAL" +
-                ");" +
-                "CREATE TABLE IF NOT EXISTS lab_courses (" +
+                ");";
+
+        // Said SQL Statement being executed.
+        /* The reason we use try-catch is because establishing a connection with the SQL DB uses up memory and
+        resources, we want the database to be closed automatically when we are done utilising it.
+         */
+        try (Connection conn = connectToDatabase(); Statement stmt = conn.createStatement()){
+            stmt.execute(sqlTableCreationPrompt);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public static void initializeLabTable(){
+        // The SQL statement that initializes the entire database and creates a table.
+        String sqlTableCreationPrompt = "CREATE TABLE IF NOT EXISTS lab_courses (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
                 "semester_number INTEGER," +
                 "course_name TEXT NOT NULL," +

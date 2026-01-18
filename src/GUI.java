@@ -1,4 +1,6 @@
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -16,7 +18,6 @@ public class GUI {
     JPanel sidePanel, contentPanel, buttonPanel;
     JLabel welcomeLabel, theoryCoursePrompt ,labCoursePrompt;
     JTextField textField;
-//    JOptionPane deletePrompt;
     JButton labCourseButton, labBackButton, theoryCourseButton, theoryBackButton, showCoursesButton, showCoursesBackButton, nextButton, deleteCourseButton;
 
     void guiStart() {
@@ -252,12 +253,9 @@ public class GUI {
         scrollPaneForLabCourses = new JScrollPane(labTable);
         deleteCourseButton = new JButton("Delete Course");
 
-//        scrollPaneForTheoryCourses.setLayout(new FlowLayout());
-//        scrollPaneForLabCourses.setLayout(new FlowLayout());
-//        scrollPaneForTheoryCourses.add(theoryTable);
-//        scrollPaneForLabCourses.add(labTable);
+        theoryTable.getTableHeader().setReorderingAllowed(false);
+        labTable.getTableHeader().setReorderingAllowed(false);
 
-//        tabbedPaneForSemesters.setLayout(new FlowLayout());
         tabbedPaneForSemesters.add(scrollPaneForTheoryCourses);
         tabbedPaneForSemesters.add(scrollPaneForLabCourses);
 
@@ -272,20 +270,44 @@ public class GUI {
         frame.revalidate();
         frame.repaint();
 
+
+        // A listener to unselect a row in the lab table if a blank space is clicked
+        scrollPaneForTheoryCourses.getViewport().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                theoryTable.clearSelection();
+                }
+        });
+
+        // A listener to unselect a row in the theory table if a blank space is clicked
+        scrollPaneForLabCourses.getViewport().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                labTable.clearSelection();
+                }
+        });
+
         deleteCourseButton.addActionListener(e -> {
+
             int theoryRow = theoryTable.getSelectedRow();
             int labRow = labTable.getSelectedRow();
 
-            if (theoryRow != -1){
-                int id = (int) theoryModel.getValueAt(theoryRow, 0);
-                SQLDatabase.deleteCourse(id,"theory_courses");
-                updateTheoryTable();
-                JOptionPane.showMessageDialog(frame, "Deleted theory table");
-            } else if (labRow != -1){
-                int id = (int) labModel.getValueAt(labRow, 0);
-                SQLDatabase.deleteCourse(id,"lab_courses");
-                updateLabTable();
-                JOptionPane.showMessageDialog(frame, "Deleted lab table");
+            if (theoryRow != -1) {
+                int confirmDelete = JOptionPane.showConfirmDialog(frame,"Are you sure you want to delete?","Confirm Deletion",JOptionPane.YES_NO_OPTION);
+                if(confirmDelete == JOptionPane.YES_OPTION) {
+                    int id = (int) theoryModel.getValueAt(theoryRow, 0);
+                    SQLDatabase.deleteCourse(id, "theory_courses");
+                    updateTheoryTable();
+                    JOptionPane.showMessageDialog(frame, "Deleted theory table");
+                }
+            } else if (labRow != -1) {
+                int confirmDelete = JOptionPane.showConfirmDialog(frame,"Are you sure you want to delete?","Confirm Deletion",JOptionPane.YES_NO_OPTION);
+                if(confirmDelete == JOptionPane.YES_OPTION) {
+                    int id = (int) labModel.getValueAt(labRow, 0);
+                    SQLDatabase.deleteCourse(id, "lab_courses");
+                    updateLabTable();
+                    JOptionPane.showMessageDialog(frame, "Deleted lab table");
+                }
             } else {
                 JOptionPane.showMessageDialog(frame, "Please select a course to delete");
             }

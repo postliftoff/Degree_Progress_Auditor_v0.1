@@ -126,7 +126,7 @@ class LabCourse extends Courses {
         switch (state) {
             case 0:
                 this.semesterNumber = Integer.parseInt(input);
-                gui.theoryCoursePrompt.setText("Enter the lab course's name:");
+                gui.labCoursePrompt.setText("Enter the lab course's name:");
                 state++;
                 break;
             case 1:
@@ -140,7 +140,7 @@ class LabCourse extends Courses {
                 state++;
                 break;
             case 3:
-                if(!(Integer.parseInt(input) >= 0 && Integer.parseInt(input) <= 100)){
+                if(Integer.parseInt(input) >= 0 && Integer.parseInt(input) <= 100){
                     this.attendanceInPercentage = Integer.parseInt(input);
                 }
                 gui.labCoursePrompt.setText("Enter the lab manual score");
