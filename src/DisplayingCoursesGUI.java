@@ -49,6 +49,14 @@ public class DisplayingCoursesGUI {
 
         semesterGPAlabel = new JLabel();
         CGPAlabel = new JLabel();
+        // Safety check if selected semester is null
+        if (semesterSelectDropdown.getSelectedItem() == null) {
+            JOptionPane.showMessageDialog(mainUI.frame, "No courses to show!", "Error", JOptionPane.ERROR_MESSAGE);
+            mainUI.contentPanel.removeAll();
+            mainUI.contentPanel.add(mainUI.welcomeLabel);
+            mainUI.showCoursesButton.setEnabled(true);
+            return;
+        }
         updateGPALabels((Integer) semesterSelectDropdown.getSelectedItem());
 
         theoryTable.setBackground(mainUI.powderPetal);
