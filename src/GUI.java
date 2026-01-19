@@ -1,328 +1,129 @@
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.awt.event.KeyEvent;
+import java.sql.*;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 
 public class GUI {
     JFrame frame;
     JSplitPane splitPane;
-    JTable theoryTable, labTable;
     DefaultTableModel theoryModel, labModel;
-    JScrollPane scrollPaneForTheoryCourses, scrollPaneForLabCourses;
-    JTabbedPane tabbedPaneForSemesters;
-    JPanel sidePanel, contentPanel, buttonPanel;
+    JPanel menuButtonsPanel, contentPanel;
     JLabel welcomeLabel, theoryCoursePrompt ,labCoursePrompt;
     JTextField textField;
-    JButton labCourseButton, labBackButton, theoryCourseButton, theoryBackButton, showCoursesButton, showCoursesBackButton, nextButton, deleteCourseButton;
+    JButton labCourseButton, theoryCourseButton, showCoursesButton, nextButton, whatIfButton;
+
+    // Colour palette
+    Color powderBlue = new Color(174, 197, 235);
+    Color twilightIndigo = new Color(58, 64, 90);
+    Color powderPetal = new Color(249, 222, 201);
+    Color ashBrown = new Color(104, 80, 68);
 
     void guiStart() {
+        // Instances to use methods.
+        AddingCoursesGUI addingCoursesGUI = new AddingCoursesGUI(this);
+        DisplayingCoursesGUI displayingCoursesGUI = new DisplayingCoursesGUI(this);
+        SimulatingCoursesGUI simulatingCoursesGUI = new  SimulatingCoursesGUI(this);
+
         frame = new JFrame("Degree Progress Auditor");
+
+        // Panel initialisation
         splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
-        sidePanel = new JPanel();
+        menuButtonsPanel = new JPanel();
         contentPanel = new JPanel();
-        welcomeLabel = new JLabel("Welcome to the Degree Progress Auditor!");
+        contentPanel.setForeground(powderPetal);
+        welcomeLabel = new JLabel("Welcome to the Degree Progress Auditor!", SwingConstants.CENTER);
+        welcomeLabel.setForeground(ashBrown);
+
+        // Button initialisation
         theoryCourseButton = new JButton("Add New Theory Course");
         labCourseButton = new JButton("Add New Lab Course");
         showCoursesButton = new JButton("Show Courses");
+        whatIfButton = new JButton("What-If?");
 
-        theoryCourse.cgpa = commonGPA;
-        labCourse.cgpa = commonGPA;
+        // Button colours
+        theoryCourseButton.setBackground(twilightIndigo);
+        labCourseButton.setBackground(twilightIndigo);
+        showCoursesButton.setBackground(twilightIndigo);
+        whatIfButton.setBackground(twilightIndigo);
 
-        String[] theoryColumns = {"ID","Course Name","Credit Hours","Attendance","Sessionals Score",
-                "Midterm Exam Score","Final Exam Score","Total Theory Score","Grade Points"};
-        theoryModel = new DefaultTableModel(theoryColumns, 0);
+        theoryCourseButton.setForeground(powderBlue);
+        labCourseButton.setForeground(powderBlue);
+        showCoursesButton.setForeground(powderBlue);
+        whatIfButton.setForeground(powderBlue);
 
-        String[] labColumns = {"ID","Course Name","Credit Hours","Attendance","Lab Manual Score",
-                "Project Score","Lab Exam Score","Total Lab Score","Grade Points"};
-        labModel = new DefaultTableModel(labColumns, 0);
+        // Making models for the tables in the display method.
+        String[] theoryColumns = {"ID","Course Name","Credit Hours","Attendance","Sessionals",
+                "Midterm Exam","Final Exam","Total Score","Grade Points"};
+        theoryModel = new DefaultTableModel(theoryColumns, 0){
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+
+        String[] labColumns = {"ID","Course Name","Credit Hours","Attendance","Lab Manual",
+                "Project","Lab Exam","Total Score","Grade Points"};
+        labModel = new DefaultTableModel(labColumns, 0){
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
 
         frame.setLayout(new BorderLayout());
-        frame.setSize(1000, 700);
+        frame.setSize(800, 700);
 
-//        splitPane.setDividerLocation(0.2);
-//        splitPane.setResizeWeight(0.05);
         splitPane.setOneTouchExpandable(true);
 
-        sidePanel.setLayout(new GridLayout(1,4));
-        sidePanel.setSize(100, 600);
+        menuButtonsPanel.setLayout(new GridLayout(1,4));
+        menuButtonsPanel.setPreferredSize(new Dimension(30, 50));
 
-        theoryCourseButton.setSize(30, 40);
-        labCourseButton.setSize(30, 40);
-        showCoursesButton.setSize(30, 40);
+        menuButtonsPanel.add(theoryCourseButton);
+        menuButtonsPanel.add(labCourseButton);
+        menuButtonsPanel.add(showCoursesButton);
+        menuButtonsPanel.add(whatIfButton);
 
-        sidePanel.add(BorderLayout.WEST,theoryCourseButton);
-        sidePanel.add(BorderLayout.WEST,labCourseButton);
-        sidePanel.add(BorderLayout.WEST,showCoursesButton);
+        theoryCourseButton.setMnemonic(KeyEvent.VK_T);
+        labCourseButton.setMnemonic(KeyEvent.VK_L);
+        showCoursesButton.setMnemonic(KeyEvent.VK_S);
+        whatIfButton.setMnemonic(KeyEvent.VK_W);
 
-        contentPanel.setSize(1000,600);
-        contentPanel.setLayout(new FlowLayout());
-        contentPanel.add(welcomeLabel);
+        setHandCursor(theoryCourseButton);
+        setHandCursor(labCourseButton);
+        setHandCursor(showCoursesButton);
+        setHandCursor(whatIfButton);
 
-        splitPane.setLeftComponent(sidePanel);
+        contentPanel.setPreferredSize(new Dimension(1000,600));
+        contentPanel.setLayout(new BorderLayout(10,10));
+        contentPanel.add(welcomeLabel, BorderLayout.CENTER);
+
+        welcomeLabel.setOpaque(true);
+
+        splitPane.setLeftComponent(menuButtonsPanel);
         splitPane.setRightComponent(contentPanel);
-        frame.add(BorderLayout.CENTER,splitPane);
+        frame.add(splitPane, BorderLayout.CENTER);
 
         // The theory course button calls the method to add a new theory course.
-        theoryCourseButton.addActionListener(e -> addTheoryCourse());
-        Semester sem = new Semester();
+        theoryCourseButton.addActionListener(_ -> addingCoursesGUI.addTheoryCourse());
 
         // The lab course button calls the method to add a new lab course.
-        labCourseButton.addActionListener(e -> addLabCourse());
+        labCourseButton.addActionListener(_ -> addingCoursesGUI.addLabCourse());
 
         // The show course button shows you added courses.
-        showCoursesButton.addActionListener(e -> displayCourses());
+        showCoursesButton.addActionListener(_ -> displayingCoursesGUI.displayCourses());
+
+        // The what-if button simulates a hypothetical GPA.
+        whatIfButton.addActionListener(_ -> simulatingCoursesGUI.simulateCourses());
 
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setVisible(true);
     }
 
-    // An instance of CGPA is required to prevent crashes
-    CGPA commonGPA  = new CGPA();
-    // An instance of a theory course is needed here, to provide the logic from the class.
-    TheoryCourse theoryCourse = new TheoryCourse();
-
-    void addTheoryCourse() {
-        contentPanel.removeAll();
-        theoryCoursePrompt = new JLabel("Enter the semester number:");
-        textField = new JTextField(20);
-        nextButton = new JButton("Next");
-        theoryBackButton = new JButton("Back");
-
-        theoryCourseButton.setEnabled(false);
-        labCourseButton.setEnabled(true);
-        showCoursesButton.setEnabled(true);
-
-        theoryCoursePrompt.setSize(200, 50);
-
-        contentPanel.add(theoryCoursePrompt);
-        contentPanel.add(textField);
-        contentPanel.add(nextButton);
-        contentPanel.add(theoryBackButton);
-
-        contentPanel.setVisible(true);
-        splitPane.setRightComponent(contentPanel);
-        frame.revalidate();
-        frame.repaint();
-
-        nextButton.addActionListener(e -> processTheoryInput());
-
-        textField.addActionListener( e -> processTheoryInput());
-
-        theoryBackButton.addActionListener(e -> {
-            contentPanel.removeAll();
-            contentPanel.add(welcomeLabel);
-//            contentPanel.setVisible(false);
-            theoryCourseButton.setEnabled(true);
-            frame.revalidate();
-            frame.repaint();
-        });
+    // A helper method to make every button have a hand cursor.
+    private void setHandCursor(JButton button) {
+        button.setCursor(new Cursor (Cursor.HAND_CURSOR));
     }
 
-    private void processTheoryInput(){ // A listener for button to add a theory course.
-        String userInput = textField.getText();
-        if(!userInput.isEmpty()) {
-            theoryCourse.processNextInput(userInput, this); // "this" refers to the current GUI.
-            textField.setText("");
-        }
-    }
-
-    // An instance of a lab course is needed here, to provide the logic from the class.
-    LabCourse labCourse = new LabCourse();
-
-    void addLabCourse() {
-        contentPanel.removeAll();
-        labCoursePrompt = new JLabel("Enter the semester number:");
-        textField = new JTextField(20);
-        nextButton = new JButton("Next");
-        labBackButton = new JButton("Back");
-
-        labCourseButton.setEnabled(false);
-        theoryCourseButton.setEnabled(true);
-        showCoursesButton.setEnabled(true);
-
-        labCoursePrompt.setSize(200, 50);
-
-        contentPanel.add(labCoursePrompt);
-        contentPanel.add(textField);
-        contentPanel.add(nextButton);
-        contentPanel.add(labBackButton);
-
-        contentPanel.setVisible(true);
-        splitPane.setRightComponent(contentPanel);
-        frame.revalidate();
-        frame.repaint();
-
-        nextButton.addActionListener(e -> processLabInput());
-
-        textField.addActionListener( e -> processLabInput());
-
-        labBackButton.addActionListener(e -> {
-            contentPanel.removeAll();
-            contentPanel.add(welcomeLabel);
-//            contentPanel.setVisible(false);
-            labCourseButton.setEnabled(true);
-            frame.revalidate();
-            frame.repaint();
-        });
-    }
-
-    private void processLabInput(){ // A listener for button to add a lab course.
-        String userInput = textField.getText();
-        if(!userInput.isEmpty()) {
-            labCourse.processNextInput(userInput, this); // "this" refers to the current GUI.
-            textField.setText("");
-        }
-    }
-
-    void updateTheoryTable(){
-        /* A method to update the theory course table, fetching data from SQLite
-        We start by resetting the pre-existing rows: */
-        theoryModel.setRowCount(0);
-
-        // Here, a prompt that selects fields from a table.
-        String selectionPromptSQL = "SELECT id, course_name, credit_hours, attendance, sessionals_score," +
-                " midterm_exam_score, final_exam_score, total_theory_score, grade_points FROM theory_courses";
-
-        try (Connection conn = SQLDatabase.connectToDatabase(); // Establishing a connection
-             Statement stmt = conn.createStatement(); // Creating the statement
-             ResultSet rs = stmt.executeQuery(selectionPromptSQL)){ // Executing our query in SQL
-
-            while (rs.next()){ // Iterating through the table
-                int id = rs.getInt("id");
-                String cn = rs.getString("course_name");
-                int crhrs = rs.getInt("credit_hours");
-                int att = rs.getInt("attendance");
-                int ss = rs.getInt("sessionals_score");
-                int mes = rs.getInt("midterm_exam_score");
-                int fes = rs.getInt("final_exam_score");
-                int tts = rs.getInt("total_theory_score");
-                int gps = rs.getInt("grade_points");
-
-                theoryModel.addRow(new Object[]{id,cn,crhrs,att,ss,mes,fes,tts,gps}); // Adding all the data in a row.
-            }
-        } catch (SQLException e){
-            System.out.println("Couldn't load table: " + e.getMessage());
-        }
-    }
-
-    void updateLabTable() {
-        labModel.setRowCount(0);
-
-        String selectionPromptSQL = "SELECT id, course_name, credit_hours, attendance, lab_manual_score, project_score," +
-                " lab_exam_score, total_lab_score, grade_points FROM lab_courses";
-
-        try (Connection conn = SQLDatabase.connectToDatabase();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(selectionPromptSQL)) {
-
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                String cn = rs.getString("course_name");
-                int crhrs = rs.getInt("credit_hours");
-                int attendance = rs.getInt("attendance");
-                int lms = rs.getInt("lab_manual_score");
-                int ps = rs.getInt("project_score");
-                int les = rs.getInt("lab_exam_score");
-                int tls = rs.getInt("total_lab_score");
-                int gps = rs.getInt("grade_points");
-
-                labModel.addRow(new Object[]{id,cn,crhrs,attendance,lms,ps,les,tls,gps});
-            }
-        } catch (SQLException e) { System.out.println(e.getMessage()); }
-    }
-
-    void displayCourses(){
-        showCoursesBackButton = new JButton("Back");
-
-        contentPanel.removeAll();
-        theoryCourseButton.setEnabled(true);
-        labCourseButton.setEnabled(true);
-        showCoursesButton.setEnabled(false);
-
-
-        buttonPanel = new JPanel();
-        tabbedPaneForSemesters = new JTabbedPane();
-        theoryTable = new JTable(theoryModel);
-        labTable = new JTable(labModel);
-        scrollPaneForTheoryCourses = new JScrollPane(theoryTable);
-        scrollPaneForLabCourses = new JScrollPane(labTable);
-        deleteCourseButton = new JButton("Delete Course");
-
-        theoryTable.getTableHeader().setReorderingAllowed(false);
-        labTable.getTableHeader().setReorderingAllowed(false);
-
-        tabbedPaneForSemesters.add(scrollPaneForTheoryCourses);
-        tabbedPaneForSemesters.add(scrollPaneForLabCourses);
-
-        buttonPanel.add(deleteCourseButton);
-        buttonPanel.add(showCoursesBackButton);
-
-        contentPanel.add(tabbedPaneForSemesters);
-        contentPanel.add(buttonPanel);
-        contentPanel.setVisible(true);
-
-        splitPane.setRightComponent(contentPanel);
-        frame.revalidate();
-        frame.repaint();
-
-
-        // A listener to unselect a row in the lab table if a blank space is clicked
-        scrollPaneForTheoryCourses.getViewport().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                theoryTable.clearSelection();
-                }
-        });
-
-        // A listener to unselect a row in the theory table if a blank space is clicked
-        scrollPaneForLabCourses.getViewport().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                labTable.clearSelection();
-                }
-        });
-
-        deleteCourseButton.addActionListener(e -> {
-
-            int theoryRow = theoryTable.getSelectedRow();
-            int labRow = labTable.getSelectedRow();
-
-            if (theoryRow != -1) {
-                int confirmDelete = JOptionPane.showConfirmDialog(frame,"Are you sure you want to delete?","Confirm Deletion",JOptionPane.YES_NO_OPTION);
-                if(confirmDelete == JOptionPane.YES_OPTION) {
-                    int id = (int) theoryModel.getValueAt(theoryRow, 0);
-                    SQLDatabase.deleteCourse(id, "theory_courses");
-                    updateTheoryTable();
-                    JOptionPane.showMessageDialog(frame, "Deleted theory table");
-                }
-            } else if (labRow != -1) {
-                int confirmDelete = JOptionPane.showConfirmDialog(frame,"Are you sure you want to delete?","Confirm Deletion",JOptionPane.YES_NO_OPTION);
-                if(confirmDelete == JOptionPane.YES_OPTION) {
-                    int id = (int) labModel.getValueAt(labRow, 0);
-                    SQLDatabase.deleteCourse(id, "lab_courses");
-                    updateLabTable();
-                    JOptionPane.showMessageDialog(frame, "Deleted lab table");
-                }
-            } else {
-                JOptionPane.showMessageDialog(frame, "Please select a course to delete");
-            }
-        });
-
-        showCoursesBackButton.addActionListener(e -> {
-            contentPanel.removeAll();
-            contentPanel.add(welcomeLabel);
-//            contentPanel.setVisible(false);
-            showCoursesButton.setEnabled(true);
-            frame.revalidate();
-            frame.repaint();
-        });
-
-        updateTheoryTable();
-        updateLabTable();
-    }
 }
+

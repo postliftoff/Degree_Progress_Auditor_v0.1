@@ -10,7 +10,7 @@ public class SQLDatabase {
         return DriverManager.getConnection(URL);
     }
 
-    public static void initializeTheoryTable(){
+    static void initializeTheoryTable() {
         // The SQL statement that initializes the entire database and creates a table.
         String sqlTableCreationPrompt = "CREATE TABLE IF NOT EXISTS theory_courses (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -26,17 +26,17 @@ public class SQLDatabase {
                 ");";
 
         // Said SQL Statement being executed.
-        /* The reason we use try-catch is because establishing a connection with the SQL DB uses up memory and
+        /* The reason we use try-catch is that establishing a connection with the SQL DB uses up memory and
         resources, we want the database to be closed automatically when we are done utilising it.
          */
-        try (Connection conn = connectToDatabase(); Statement stmt = conn.createStatement()){
+        try (Connection conn = connectToDatabase(); Statement stmt = conn.createStatement()) {
             stmt.execute(sqlTableCreationPrompt);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    public static void initializeLabTable(){
+    static void initializeLabTable() {
         // The SQL statement that initializes the entire database and creates a table.
         String sqlTableCreationPrompt = "CREATE TABLE IF NOT EXISTS lab_courses (" +
                 "id INTEGER PRIMARY KEY AUTOINCREMENT," +
@@ -52,24 +52,26 @@ public class SQLDatabase {
                 ");";
 
         // Said SQL Statement being executed.
-        /* The reason we use try-catch is because establishing a connection with the SQL DB uses up memory and
+        /* The reason we use try-catch is that establishing a connection with the SQL DB uses up memory and
         resources, we want the database to be closed automatically when we are done utilising it.
          */
-        try (Connection conn = connectToDatabase(); Statement stmt = conn.createStatement()){
+        try (Connection conn = connectToDatabase(); Statement stmt = conn.createStatement()) {
             stmt.execute(sqlTableCreationPrompt);
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
+}
 
-    public static void addTheoryCourseToDb(TheoryCourse theoryCourse) {
+class DBCourseManagement extends SQLDatabase {
+    static void addTheoryCourseToDb(TheoryCourse theoryCourse) {
 
         // This prompt creates a parameterised statement in the database and fills in values given by the user.
         String sqlTheoryCoursePrompt = "INSERT INTO theory_courses(semester_number,course_name,credit_hours,attendance" +
-        ",sessionals_score,midterm_exam_score,final_exam_score,total_theory_score,grade_points)" +
+                ",sessionals_score,midterm_exam_score,final_exam_score,total_theory_score,grade_points)" +
                 "VALUES (?,?,?,?,?,?,?,?,?)";
 
-        try (Connection conn = connectToDatabase(); PreparedStatement pstmt = conn.prepareStatement(sqlTheoryCoursePrompt)){
+        try (Connection conn = connectToDatabase(); PreparedStatement pstmt = conn.prepareStatement(sqlTheoryCoursePrompt)) {
 
             //Assigning each value one by one
             pstmt.setInt(1, theoryCourse.semesterNumber);
@@ -89,14 +91,14 @@ public class SQLDatabase {
         }
     }
 
-    public static void addLabCourseToDb(LabCourse labCourse) {
+    static void addLabCourseToDb(LabCourse labCourse) {
 
         // This prompt creates a parameterised statement in the database and fills in values given by the user.
         String sqlLabCoursePrompt = "INSERT INTO lab_courses(semester_number,course_name,credit_hours,attendance" +
-        ",lab_manual_score,project_score,lab_exam_score,total_lab_score,grade_points)" +
+                ",lab_manual_score,project_score,lab_exam_score,total_lab_score,grade_points)" +
                 "VALUES (?,?,?,?,?,?,?,?,?)";
 
-        try (Connection conn = connectToDatabase(); PreparedStatement pstmt = conn.prepareStatement(sqlLabCoursePrompt)){
+        try (Connection conn = connectToDatabase(); PreparedStatement pstmt = conn.prepareStatement(sqlLabCoursePrompt)) {
 
             //Assigning each value one by one
             pstmt.setInt(1, labCourse.semesterNumber);
@@ -116,16 +118,52 @@ public class SQLDatabase {
         }
     }
 
-    public static void deleteCourse(int id, String chosenTable){
+    static void deleteCourse(int id, String chosenTable) {
         // A method to delete chosen courses.
         String deleteCoursePromptSQL = "DELETE FROM " + chosenTable + " WHERE id = ?";
 
         try (Connection conn = SQLDatabase.connectToDatabase();
-        PreparedStatement pstmt = conn.prepareStatement(deleteCoursePromptSQL)){
-            pstmt.setInt(1,id);
+             PreparedStatement pstmt = conn.prepareStatement(deleteCoursePromptSQL)) {
+            pstmt.setInt(1, id);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             System.out.println("Failed to delete course: " + e.getMessage());
         }
+    }
+}
+
+class GPACalculations extends DBCourseManagement {
+    // The method that gives us a result set for GPA calculations based on the query
+    private static double[] getTotalsFromQuery(String query){
+        double gradePoints = 0;
+        int creditHours = 0;
+
+        try(Connection conn = SQLDatabase.connectToDatabase();
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query)){
+
+            if(rs.next()){
+                gradePoints = rs.getDouble(1);
+                creditHours = rs.getInt(2);
+            }
+
+        } catch (SQLException e){
+            System.out.println(e.getMessage());
+        }
+        return new double[]{gradePoints, (double) creditHours};
+    }
+
+    // Logic for getting the total amount of grade points and credit hours, for CGPA calculations.
+    static double[] totalsForCGPA() {
+        return getTotalsFromQuery("SELECT SUM(grade_points), SUM(credit_hours) FROM (" +
+                "SELECT grade_points, credit_hours FROM theory_courses " +
+                " UNION ALL SELECT grade_points, credit_hours FROM lab_courses)");
+    }
+
+    // The same as the method above, only for GPA calculations (semester-wise)
+    static double[] totalsForGPA(int semesterNumber) {
+        return getTotalsFromQuery("SELECT SUM(grade_points), SUM(credit_hours) FROM (" +
+                "SELECT grade_points, credit_hours FROM theory_courses WHERE semester_number = " + semesterNumber +
+                " UNION ALL SELECT grade_points, credit_hours FROM lab_courses WHERE  semester_number = " + semesterNumber + ")");
     }
 }
